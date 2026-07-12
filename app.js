@@ -9,7 +9,7 @@ const CONFIG = {
 const TOKEN_KEY = 'at_pat';
 
 const ENV_HEADERS = ['date','location_name','temp_c','humidity_pct','wind_kph','pm2_5','pm10','aqi_european','pollen_tree','pollen_grass','pollen_weed','source_weather','source_pollen','fetched_at_utc'];
-const SYMPTOM_HEADERS = ['date','time','location_name','severity_0_5','symptoms','dog_contact','cat_contact','dust_exposure','antihistamine_taken','antihistamine_name','sleep_hours','notes'];
+const SYMPTOM_HEADERS = ['date','time','location_name','severity_0_5','symptoms','dog_contact','cat_contact','dust_exposure','laser_cut_exposure','laser_cut_material','antihistamine_taken','antihistamine_name','sleep_hours','notes'];
 const LOCATION_HEADERS = ['name','lat','lon','active'];
 
 const SYMPTOM_VOCAB = [
@@ -31,6 +31,7 @@ const state = {
   activeSymptoms: new Set(),
   exposure: new Set(),
   antihistamineTaken: false,
+  laserCutExposure: false,
 };
 
 /* ================= Token ================= */
@@ -432,6 +433,15 @@ function initAntihistamine(){
     antiName.classList.toggle('visible', state.antihistamineTaken);
   });
 }
+function initLaserExposure(){
+  const laserToggle = document.getElementById('laserToggle');
+  const laserMaterial = document.getElementById('laserMaterial');
+  laserToggle.addEventListener('click', () => {
+    laserToggle.classList.toggle('active');
+    state.laserCutExposure = laserToggle.classList.contains('active');
+    laserMaterial.classList.toggle('visible', state.laserCutExposure);
+  });
+}
 
 /* ================= New-location fields ================= */
 function initLocationEntry(){
@@ -499,6 +509,8 @@ async function handleSave(){
       dog_contact: String(state.exposure.has('dog')),
       cat_contact: String(state.exposure.has('cat')),
       dust_exposure: String(state.exposure.has('dust')),
+      laser_cut_exposure: String(state.laserCutExposure),
+      laser_cut_material: state.laserCutExposure ? document.getElementById('laserMaterial').value : '',
       antihistamine_taken: String(state.antihistamineTaken),
       antihistamine_name: state.antihistamineTaken ? document.getElementById('antiName').value.trim() : '',
       sleep_hours: document.getElementById('sleepInput').value || '',
@@ -697,6 +709,7 @@ function init(){
   initSymptomPills();
   initExposureToggles();
   initAntihistamine();
+  initLaserExposure();
   initLocationEntry();
   initModal();
   document.getElementById('saveBtn').addEventListener('click', handleSave);

@@ -231,6 +231,8 @@ select.location-select:focus-visible, button:focus-visible, input:focus-visible,
 textarea{ min-height:70px; resize:vertical; font-family:'IBM Plex Sans', sans-serif; }
 .anti-name{ margin-top:10px; max-width:280px; display:none; }
 .anti-name.visible{ display:block; }
+.reveal-field{ margin-top:10px; display:none; }
+.reveal-field.visible{ display:block; }
 .new-location-fields{ margin-top:10px; display:none; gap:10px; }
 .new-location-fields.visible{ display:grid; grid-template-columns:1fr 1fr; }
 
