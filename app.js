@@ -224,34 +224,49 @@ async function fetchEnvRange(loc, startDate, endDate){
 }
 
 /* ================= Backfill ================= */
-async function computeBackfillRows(loc, existingEnv){
-  const existingDates = new Set(existingEnv.filter(r => r.location_name === loc.name).map(r => r.date));
-  const today = todayISO();
-  const startDate = existingDates.size === 0 ? addDaysISO(today, -30) : addDaysISO([...existingDates].sort().slice(-1)[0], 1);
-  if (startDate > today) return [];
-  const rows = await fetchEnvRange(loc, startDate, today);
-  return rows.filter(r => !existingDates.has(r.date));
-}
-
+// Weather/AQI (this function) and pollen (the local script) can each create a
+// row for a given date+location independently. Always merge by (date,
+// location) rather than skip-if-exists, so whichever side runs first doesn't
+// block the other from filling in its columns later.
 async function runBackfill(){
   const activeLocations = state.locations.filter(l => l.active === 'true' || l.active === true);
   if (!activeLocations.length) return;
   setGlobalStatus('Checking for missing environmental data…');
-  let allNew = [];
+  let fetchedRows = [];
   for (const loc of activeLocations) {
     try {
-      const rows = await computeBackfillRows(loc, state.environmental);
-      allNew = allNew.concat(rows);
+      const existingForLoc = state.environmental.filter(r => r.location_name === loc.name);
+      const weatherDates = existingForLoc.filter(r => r.source_weather).map(r => r.date);
+      const today = todayISO();
+      const startDate = weatherDates.length === 0 ? addDaysISO(today, -30) : addDaysISO(weatherDates.sort().slice(-1)[0], 1);
+      if (startDate > today) continue;
+      const rows = await fetchEnvRange(loc, startDate, today);
+      fetchedRows = fetchedRows.concat(rows);
     } catch (e) {
       console.error('Backfill failed for', loc.name, e);
     }
   }
-  if (!allNew.length) { clearGlobalStatus(); return; }
-  setGlobalStatus(`Saving ${allNew.length} day(s) of weather/AQI data…`);
-  await updateCSV('environmental.csv', ENV_HEADERS, (records) => {
-    records.push(...allNew);
-  }, `Backfill environmental data (${allNew.length} row(s))`);
-  state.environmental = state.environmental.concat(allNew);
+  if (!fetchedRows.length) { clearGlobalStatus(); return; }
+  setGlobalStatus(`Saving ${fetchedRows.length} day(s) of weather/AQI data…`);
+  const updatedRecords = await updateCSV('environmental.csv', ENV_HEADERS, (records) => {
+    const byKey = {};
+    records.forEach(r => byKey[r.location_name + '|' + r.date] = r);
+    fetchedRows.forEach(row => {
+      const key = row.location_name + '|' + row.date;
+      const existing = byKey[key];
+      if (existing) {
+        Object.assign(existing, {
+          temp_c: row.temp_c, humidity_pct: row.humidity_pct, wind_kph: row.wind_kph,
+          pm2_5: row.pm2_5, pm10: row.pm10, aqi_european: row.aqi_european,
+          source_weather: row.source_weather, fetched_at_utc: row.fetched_at_utc,
+        });
+      } else {
+        records.push(row);
+        byKey[key] = row;
+      }
+    });
+  }, `Backfill environmental data (${fetchedRows.length} row(s))`);
+  state.environmental = updatedRecords;
   clearGlobalStatus();
 }
 
@@ -311,12 +326,12 @@ function aqiLabel(aqi){
   if (v <= 80) return 'Poor';
   return 'Very poor';
 }
+// pollen_* columns store Google's Universal Pollen Index (UPI), an integer 0-5 scale.
+const UPI_LABELS = ['None', 'Very Low', 'Low', 'Moderate', 'High', 'Very High'];
 function pollenLabel(v){
   if (v === '' || v === null || v === undefined) return null;
-  const n = Number(v);
-  if (n < 20) return 'Low';
-  if (n < 50) return 'Moderate';
-  return 'High';
+  const n = Math.round(Number(v));
+  return UPI_LABELS[Math.max(0, Math.min(5, n))];
 }
 
 function renderEnvSnapshot(){
@@ -335,7 +350,7 @@ function renderEnvSnapshot(){
     html += '<div class="pollen-bars">';
     [['pollen_tree','Tree'],['pollen_grass','Grass'],['pollen_weed','Weed']].forEach(([key,label]) => {
       const v = row[key];
-      const pct = v === '' ? 0 : Math.min(100, Number(v));
+      const pct = v === '' ? 0 : Math.min(100, (Number(v) / 5) * 100);
       const lbl = pollenLabel(v) || 'No data';
       html += `<div class="pollen-item"><div class="meter"><div class="fill" style="height:${pct}%"></div></div><div class="name">${label}</div><div class="level">${lbl}</div></div>`;
     });
