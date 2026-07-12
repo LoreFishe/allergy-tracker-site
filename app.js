@@ -435,16 +435,21 @@ function initAntihistamine(){
     state.antihistamineTaken = antiToggle.classList.contains('active');
   });
 }
+function isPositiveExposure(val){
+  return val === 'unsure' || (typeof val === 'number' && val > 0);
+}
+
 function buildExposureRatings(){
   const container = document.getElementById('exposureRatings');
   container.innerHTML = '';
   EXPOSURE_FACTORS.forEach(factor => {
     const item = document.createElement('div');
     item.className = 'exposure-item';
-    const ratingButtons = [0, 1, 2, 3, 4, 5].map(v => `<button type="button" class="rating-pill" data-val="${v}">${v}</button>`).join('');
+    const numberButtons = [0, 1, 2, 3, 4, 5].map(v => `<button type="button" class="rating-pill" data-val="${v}">${v}</button>`).join('');
+    const unsureButton = `<button type="button" class="rating-pill unsure" data-val="unsure" title="Happened, but unsure how much">?</button>`;
     item.innerHTML = `
       <span class="exposure-item-label">${factor.label}</span>
-      <div class="rating-row" data-factor="${factor.key}">${ratingButtons}</div>
+      <div class="rating-row" data-factor="${factor.key}">${numberButtons}${unsureButton}</div>
       ${factor.hasMaterial ? `<select class="text-input reveal-field" id="laserMaterial" style="max-width:220px;">
         <option value="">Material…</option>
         ${LASER_MATERIALS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}
@@ -456,10 +461,11 @@ function buildExposureRatings(){
       btn.addEventListener('click', () => {
         btns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const val = parseInt(btn.dataset.val, 10);
+        const raw = btn.dataset.val;
+        const val = raw === 'unsure' ? 'unsure' : parseInt(raw, 10);
         state.exposureRatings[factor.key] = val;
         if (factor.hasMaterial) {
-          document.getElementById('laserMaterial').classList.toggle('visible', val > 0);
+          document.getElementById('laserMaterial').classList.toggle('visible', isPositiveExposure(val));
         }
       });
     });
@@ -610,7 +616,7 @@ async function handleSave(){
       const val = state.exposureRatings[factor.key];
       record[factor.field] = val !== undefined ? String(val) : '';
       if (factor.hasMaterial) {
-        record.laser_cut_material = (val !== undefined && val > 0) ? document.getElementById('laserMaterial').value : '';
+        record.laser_cut_material = isPositiveExposure(val) ? document.getElementById('laserMaterial').value : '';
       }
     });
     setSaveStatus('Saving…', false);

@@ -232,6 +232,8 @@ select.location-select:focus-visible, button:focus-visible, input:focus-visible,
 }
 .rating-pill:hover{ border-color:var(--ink-faint); }
 .rating-pill.active{ background:var(--gold-soft); border-color:var(--gold); color:#5C4212; }
+.rating-pill.unsure{ border-style:dashed; }
+.rating-pill.unsure.active{ background:var(--sky-soft); border-color:var(--sky); border-style:solid; color:#233842; }
 
 .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 @media (max-width:560px){ .form-row{ grid-template-columns:1fr; } }
