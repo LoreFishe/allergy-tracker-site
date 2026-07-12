@@ -48,26 +48,85 @@
   <p class="section-label" id="todayLabel">Today</p>
 
   <div class="today-grid">
-    <div class="card gauge-card">
-      <h2 style="font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin:0 0 4px; align-self:flex-start;">How are you feeling?</h2>
-      <div class="gauge-wrap">
-        <svg viewBox="0 0 220 130">
-          <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#DBD9CB" stroke-width="3"/>
-          <line id="needle" x1="110" y1="110" x2="110" y2="30" stroke="#232A24" stroke-width="2.5" stroke-linecap="round"/>
-          <circle cx="110" cy="110" r="6" fill="#232A24"/>
-        </svg>
-        <button class="tick-btn" data-val="0" aria-pressed="false" aria-label="Severity 0, clear"></button>
-        <button class="tick-btn" data-val="1" aria-pressed="false" aria-label="Severity 1, mild"></button>
-        <button class="tick-btn" data-val="2" aria-pressed="false" aria-label="Severity 2, noticeable"></button>
-        <button class="tick-btn" data-val="3" aria-pressed="false" aria-label="Severity 3, rough"></button>
-        <button class="tick-btn" data-val="4" aria-pressed="false" aria-label="Severity 4, bad"></button>
-        <button class="tick-btn" data-val="5" aria-pressed="false" aria-label="Severity 5, severe"></button>
+    <div class="card tracker-card" id="trackerCard">
+      <button type="button" class="tracker-collapsed" id="trackerCollapsedBtn">
+        <span class="tracker-plus" id="trackerPlus">+</span>
+        <span class="tracker-plus-label" id="trackerPlusLabel">Track</span>
+      </button>
+
+      <div class="tracker-expanded" id="trackerExpanded">
+        <div class="tracker-expanded-header">
+          <h2 style="font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin:0;">How are you feeling?</h2>
+          <button type="button" class="icon-btn" id="trackerCancelBtn" aria-label="Collapse without saving" title="Collapse without saving">×</button>
+        </div>
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 220 130">
+            <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#DBD9CB" stroke-width="3"/>
+            <line id="needle" x1="110" y1="110" x2="110" y2="30" stroke="#232A24" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="110" cy="110" r="6" fill="#232A24"/>
+          </svg>
+          <button class="tick-btn" data-val="0" aria-pressed="false" aria-label="Severity 0, clear"></button>
+          <button class="tick-btn" data-val="1" aria-pressed="false" aria-label="Severity 1, mild"></button>
+          <button class="tick-btn" data-val="2" aria-pressed="false" aria-label="Severity 2, noticeable"></button>
+          <button class="tick-btn" data-val="3" aria-pressed="false" aria-label="Severity 3, rough"></button>
+          <button class="tick-btn" data-val="4" aria-pressed="false" aria-label="Severity 4, bad"></button>
+          <button class="tick-btn" data-val="5" aria-pressed="false" aria-label="Severity 5, severe"></button>
+        </div>
+        <div class="gauge-readout">
+          <div class="num" id="severityNum">–</div>
+          <div class="word" id="severityWord">Not logged</div>
+        </div>
+        <div class="gauge-hint">Tap a mark on the dial to set today's severity</div>
+
+        <div class="form-row">
+          <div class="field-group">
+            <label class="field-label" for="entryLocationSelect">Location</label>
+            <select class="text-input" id="entryLocationSelect"></select>
+            <div class="new-location-fields" id="newLocationFields">
+              <input type="text" class="text-input" id="newLocName" placeholder="Name (e.g. Work)">
+              <input type="text" class="text-input" id="newLocPlace" placeholder="City, State or lat,lon">
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="entryDateInput">Date</label>
+            <input type="date" class="text-input" id="entryDateInput" style="max-width:200px;">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Symptoms</label>
+          <div class="symptom-grid" id="symptomGrid"></div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Exposure &amp; context today (0–5, leave unrated to skip)</label>
+          <div id="exposureRatings"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="field-group">
+            <label class="field-label">Antihistamine</label>
+            <button type="button" class="toggle-pill" id="antiToggle">Zyrtec taken today</button>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="sleepInput">Sleep last night</label>
+            <input type="number" class="text-input" id="sleepInput" placeholder="Hours" min="0" max="14" step="0.5" style="max-width:140px;">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="notesInput">Notes</label>
+          <textarea id="notesInput" placeholder="Anything else worth remembering about today..."></textarea>
+        </div>
+
+        <div class="form-footer">
+          <span class="save-status" id="saveStatus"></span>
+          <button class="btn-primary" id="saveBtn">
+            Save entry
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </button>
+        </div>
       </div>
-      <div class="gauge-readout">
-        <div class="num" id="severityNum">–</div>
-        <div class="word" id="severityWord">Not logged</div>
-      </div>
-      <div class="gauge-hint">Tap a mark on the dial to set today's severity</div>
     </div>
 
     <div class="card env-card">
@@ -75,58 +134,6 @@
       <div id="envBody">
         <div class="env-empty">No environmental data yet — connect your data repo to load it.</div>
       </div>
-    </div>
-  </div>
-
-  <p class="section-label">Log entry</p>
-  <div class="card form-card">
-    <div class="form-row">
-      <div class="field-group">
-        <label class="field-label" for="entryLocationSelect">Location</label>
-        <select class="text-input" id="entryLocationSelect"></select>
-        <div class="new-location-fields" id="newLocationFields">
-          <input type="text" class="text-input" id="newLocName" placeholder="Name (e.g. Work)">
-          <input type="text" class="text-input" id="newLocPlace" placeholder="City, State or lat,lon">
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label" for="entryDateInput">Date</label>
-        <input type="date" class="text-input" id="entryDateInput" style="max-width:200px;">
-      </div>
-    </div>
-
-    <div class="field-group">
-      <label class="field-label">Symptoms</label>
-      <div class="symptom-grid" id="symptomGrid"></div>
-    </div>
-
-    <div class="field-group">
-      <label class="field-label">Exposure &amp; context today (0–5, leave unrated to skip)</label>
-      <div id="exposureRatings"></div>
-    </div>
-
-    <div class="form-row">
-      <div class="field-group">
-        <label class="field-label">Antihistamine</label>
-        <button type="button" class="toggle-pill" id="antiToggle">Zyrtec taken today</button>
-      </div>
-      <div class="field-group">
-        <label class="field-label" for="sleepInput">Sleep last night</label>
-        <input type="number" class="text-input" id="sleepInput" placeholder="Hours" min="0" max="14" step="0.5" style="max-width:140px;">
-      </div>
-    </div>
-
-    <div class="field-group">
-      <label class="field-label" for="notesInput">Notes</label>
-      <textarea id="notesInput" placeholder="Anything else worth remembering about today..."></textarea>
-    </div>
-
-    <div class="form-footer">
-      <span class="save-status" id="saveStatus"></span>
-      <button class="btn-primary" id="saveBtn">
-        Save entry
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-      </button>
     </div>
   </div>
 

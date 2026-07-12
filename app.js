@@ -554,6 +554,23 @@ function renderManageList(){
   });
 }
 
+/* ================= Tracker expand/collapse ================= */
+function expandTracker(){
+  document.getElementById('trackerCard').classList.add('expanded');
+}
+function collapseTracker(justSaved){
+  document.getElementById('trackerCard').classList.remove('expanded');
+  if (justSaved) {
+    const label = document.getElementById('trackerPlusLabel');
+    label.textContent = '✓ Saved';
+    setTimeout(() => { label.textContent = 'Track'; }, 2500);
+  }
+}
+function initTracker(){
+  document.getElementById('trackerCollapsedBtn').addEventListener('click', expandTracker);
+  document.getElementById('trackerCancelBtn').addEventListener('click', () => collapseTracker(false));
+}
+
 function resetForm(){
   state.selectedSeverity = null;
   document.querySelectorAll('.tick-btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
@@ -623,11 +640,12 @@ async function handleSave(){
     await updateCSV('symptoms.csv', SYMPTOM_HEADERS, (records) => { records.push(record); }, `Log symptom entry: ${record.date}`);
     state.symptoms.push(record);
     resetForm();
-    setSaveStatus('✓ Entry saved — form cleared for the next one', false);
+    setSaveStatus('✓ Entry saved', false);
     renderHistory();
+    collapseTracker(true);
   } catch (e) {
     console.error(e);
-    setSaveStatus('Save failed — check your token and connection', true);
+    setSaveStatus('Save failed — please try again', true);
   } finally {
     saveBtn.disabled = false;
   }
@@ -810,6 +828,7 @@ async function loadAll(){
 }
 
 function init(){
+  initTracker();
   initGauge();
   initSymptomPills();
   buildExposureRatings();
