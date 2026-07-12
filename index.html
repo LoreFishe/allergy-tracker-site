@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Log — Allergy Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+        <circle cx="17" cy="17" r="9" fill="#B8862E"/>
+        <g stroke="#B8862E" stroke-width="2" stroke-linecap="round">
+          <line x1="17" y1="2" x2="17" y2="6"/>
+          <line x1="17" y1="28" x2="17" y2="32"/>
+          <line x1="2" y1="17" x2="6" y2="17"/>
+          <line x1="28" y1="17" x2="32" y2="17"/>
+          <line x1="6.5" y1="6.5" x2="9.2" y2="9.2"/>
+          <line x1="24.8" y1="24.8" x2="27.5" y2="27.5"/>
+          <line x1="27.5" y1="6.5" x2="24.8" y2="9.2"/>
+          <line x1="9.2" y1="24.8" x2="6.5" y2="27.5"/>
+        </g>
+      </svg>
+      <div>
+        <h1>Field Log</h1>
+        <p>allergy &amp; environment tracker</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <select class="location-select" id="locationSelect" aria-label="Location"></select>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Data connection">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="empty-state" id="globalStatus" style="display:none; margin-bottom:16px;"></div>
+
+  <p class="section-label" id="todayLabel">Today</p>
+
+  <div class="today-grid">
+    <div class="card gauge-card">
+      <h2 style="font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin:0 0 4px; align-self:flex-start;">How are you feeling?</h2>
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 220 130">
+          <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#DBD9CB" stroke-width="3"/>
+          <line id="needle" x1="110" y1="110" x2="110" y2="30" stroke="#232A24" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="110" cy="110" r="6" fill="#232A24"/>
+        </svg>
+        <button class="tick-btn" data-val="0" aria-pressed="false" aria-label="Severity 0, clear"></button>
+        <button class="tick-btn" data-val="1" aria-pressed="false" aria-label="Severity 1, mild"></button>
+        <button class="tick-btn" data-val="2" aria-pressed="false" aria-label="Severity 2, noticeable"></button>
+        <button class="tick-btn" data-val="3" aria-pressed="false" aria-label="Severity 3, rough"></button>
+        <button class="tick-btn" data-val="4" aria-pressed="false" aria-label="Severity 4, bad"></button>
+        <button class="tick-btn" data-val="5" aria-pressed="false" aria-label="Severity 5, severe"></button>
+      </div>
+      <div class="gauge-readout">
+        <div class="num" id="severityNum">–</div>
+        <div class="word" id="severityWord">Not logged</div>
+      </div>
+      <div class="gauge-hint">Tap a mark on the dial to set today's severity</div>
+    </div>
+
+    <div class="card env-card">
+      <h2 id="envTitle">Conditions today</h2>
+      <div id="envBody">
+        <div class="env-empty">No environmental data yet — connect your data repo to load it.</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="section-label">Log entry</p>
+  <div class="card form-card">
+    <div class="field-group">
+      <label class="field-label" for="entryLocationSelect">Location</label>
+      <select class="text-input" id="entryLocationSelect" style="max-width:280px;"></select>
+      <div class="new-location-fields" id="newLocationFields">
+        <input type="text" class="text-input" id="newLocName" placeholder="Name (e.g. Work)">
+        <input type="text" class="text-input" id="newLocPlace" placeholder="City, State or lat,lon">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Symptoms</label>
+      <div class="symptom-grid" id="symptomGrid"></div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Exposure today</label>
+      <div class="exposure-row" id="exposureRow">
+        <button type="button" class="toggle-pill" data-exp="dog">Dog contact</button>
+        <button type="button" class="toggle-pill" data-exp="cat">Cat contact</button>
+        <button type="button" class="toggle-pill" data-exp="dust">Dust exposure</button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field-group">
+        <label class="field-label">Antihistamine</label>
+        <button type="button" class="toggle-pill" id="antiToggle">Taken today</button>
+        <input type="text" class="text-input anti-name" id="antiName" placeholder="Which one? (e.g. Zyrtec)">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="sleepInput">Sleep last night</label>
+        <input type="number" class="text-input" id="sleepInput" placeholder="Hours" min="0" max="14" step="0.5" style="max-width:140px;">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="notesInput">Notes</label>
+      <textarea id="notesInput" placeholder="Anything else worth remembering about today..."></textarea>
+    </div>
+
+    <div class="form-footer">
+      <span class="save-status" id="saveStatus"></span>
+      <button class="btn-primary" id="saveBtn">
+        Save entry
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <p class="section-label">History — complete records</p>
+  <div class="card history-card">
+    <div class="legend">
+      <span><span class="sw" style="background:#5F7A67"></span>Clear / mild</span>
+      <span><span class="sw" style="background:#B8862E"></span>Noticeable / rough</span>
+      <span><span class="sw" style="background:#A14B3B"></span>Bad / severe</span>
+      <span><span class="sw" style="background:#8B9086; border-radius:50%; width:6px; height:6px;"></span>Pollen trend</span>
+    </div>
+    <div class="chart-wrap" id="chartWrap">
+      <svg id="historyChart" viewBox="0 0 640 180" style="width:100%; height:auto; overflow:visible;"></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+    <div class="empty-state" id="chartEmpty" style="display:none;">No complete records yet — logs need environmental data for 30 days before and after their date. Check back once you've been tracking a while.</div>
+  </div>
+
+  <p class="section-label">Still filling in — incomplete records</p>
+  <div class="card history-card">
+    <div class="incomplete-list" id="incompleteList"></div>
+    <div class="empty-state" id="incompleteEmpty" style="display:none;">Nothing here yet.</div>
+  </div>
+
+  <footer>
+    Reads and writes your private data repo directly from this page. Nothing is sent anywhere else.
+  </footer>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3>Data connection</h3>
+    <p>Paste a fine-grained GitHub token scoped to only your <code>allergy-tracker-data</code> repo (Contents: Read and write). See the README for how to generate one. It's stored in this browser's local storage — anyone with access to this unlocked browser could use it to write to that repo, but nothing else.</p>
+    <input type="password" class="text-input" id="tokenInput" placeholder="github_pat_••••••••••••••••••••">
+    <div class="modal-status" id="modalStatus"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="modalClose">Close</button>
+      <button class="btn-primary" id="modalSave">Save token</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
