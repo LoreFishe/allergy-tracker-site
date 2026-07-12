@@ -101,53 +101,14 @@
     </div>
 
     <div class="field-group">
-      <label class="field-label">Exposure today</label>
-      <div class="exposure-row" id="exposureRow">
-        <button type="button" class="toggle-pill" data-exp="dog">Dog contact</button>
-        <button type="button" class="toggle-pill" data-exp="cat">Cat contact</button>
-        <button type="button" class="toggle-pill" data-exp="dust">Dust exposure</button>
-        <button type="button" class="toggle-pill" id="laserToggle">Laser-cut exposure</button>
-      </div>
-      <select class="text-input reveal-field" id="laserMaterial" style="max-width:220px;">
-        <option value="">Material…</option>
-        <option value="plywood">Plywood</option>
-        <option value="solid_wood">Solid wood</option>
-        <option value="mdf">MDF</option>
-        <option value="acrylic">Acrylic</option>
-        <option value="cardboard_paper">Cardboard / paper</option>
-        <option value="leather">Leather</option>
-        <option value="other">Other (note it below)</option>
-      </select>
-    </div>
-
-    <div class="form-row">
-      <div class="field-group">
-        <label class="field-label">3D-printing exposure (1–5)</label>
-        <div class="rating-row" id="printingRating">
-          <button type="button" class="rating-pill" data-val="1">1</button>
-          <button type="button" class="rating-pill" data-val="2">2</button>
-          <button type="button" class="rating-pill" data-val="3">3</button>
-          <button type="button" class="rating-pill" data-val="4">4</button>
-          <button type="button" class="rating-pill" data-val="5">5</button>
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Time spent indoors (1–5)</label>
-        <div class="rating-row" id="indoorsRating">
-          <button type="button" class="rating-pill" data-val="1">1</button>
-          <button type="button" class="rating-pill" data-val="2">2</button>
-          <button type="button" class="rating-pill" data-val="3">3</button>
-          <button type="button" class="rating-pill" data-val="4">4</button>
-          <button type="button" class="rating-pill" data-val="5">5</button>
-        </div>
-      </div>
+      <label class="field-label">Exposure &amp; context today (0–5, leave unrated to skip)</label>
+      <div id="exposureRatings"></div>
     </div>
 
     <div class="form-row">
       <div class="field-group">
         <label class="field-label">Antihistamine</label>
-        <button type="button" class="toggle-pill" id="antiToggle">Taken today</button>
-        <input type="text" class="text-input anti-name" id="antiName" placeholder="Which one? (e.g. Zyrtec)">
+        <button type="button" class="toggle-pill" id="antiToggle">Zyrtec taken today</button>
       </div>
       <div class="field-group">
         <label class="field-label" for="sleepInput">Sleep last night</label>

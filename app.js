@@ -9,7 +9,7 @@ const CONFIG = {
 const TOKEN_KEY = 'at_pat';
 
 const ENV_HEADERS = ['date','location_name','temp_c','humidity_pct','wind_kph','pm2_5','pm10','aqi_european','pollen_tree','pollen_grass','pollen_weed','source_weather','source_pollen','fetched_at_utc'];
-const SYMPTOM_HEADERS = ['date','time','location_name','severity_0_5','symptoms','dog_contact','cat_contact','dust_exposure','laser_cut_exposure','laser_cut_material','printing_exposure_1_5','time_indoors_1_5','antihistamine_taken','antihistamine_name','sleep_hours','notes'];
+const SYMPTOM_HEADERS = ['date','time','location_name','severity_0_5','symptoms','dog_exposure_0_5','cat_exposure_0_5','dust_exposure_0_5','laser_cut_exposure_0_5','laser_cut_material','printing_exposure_0_5','time_indoors_0_5','antihistamine_taken','antihistamine_name','sleep_hours','notes'];
 const LOCATION_HEADERS = ['name','lat','lon','active'];
 
 const SYMPTOM_VOCAB = [
@@ -20,6 +20,20 @@ const SYMPTOM_VOCAB = [
   { key: 'fatigue', label: 'Fatigue' },
 ];
 const SEVERITY_WORDS = ['Clear','Mild','Noticeable','Rough','Bad','Severe'];
+const ANTIHISTAMINE_NAME = 'Zyrtec';
+
+const EXPOSURE_FACTORS = [
+  { key: 'dog', label: 'Dog contact', field: 'dog_exposure_0_5' },
+  { key: 'cat', label: 'Cat contact', field: 'cat_exposure_0_5' },
+  { key: 'dust', label: 'Dust exposure', field: 'dust_exposure_0_5' },
+  { key: 'laser', label: 'Laser-cut exposure', field: 'laser_cut_exposure_0_5', hasMaterial: true },
+  { key: 'printing', label: '3D-printing exposure', field: 'printing_exposure_0_5' },
+  { key: 'indoors', label: 'Time spent indoors', field: 'time_indoors_0_5' },
+];
+const LASER_MATERIALS = [
+  ['plywood', 'Plywood'], ['solid_wood', 'Solid wood'], ['mdf', 'MDF'], ['acrylic', 'Acrylic'],
+  ['cardboard_paper', 'Cardboard / paper'], ['leather', 'Leather'], ['other', 'Other (note it below)'],
+];
 
 /* ================= State ================= */
 const state = {
@@ -29,11 +43,8 @@ const state = {
   selectedLocation: null,
   selectedSeverity: null,
   activeSymptoms: new Set(),
-  exposure: new Set(),
+  exposureRatings: {}, // key -> 0..5, absent = not rated
   antihistamineTaken: false,
-  laserCutExposure: false,
-  printingExposure: null,
-  timeIndoors: null,
 };
 
 /* ================= Token ================= */
@@ -417,47 +428,48 @@ function initSymptomPills(){
     grid.appendChild(label);
   });
 }
-function initExposureToggles(){
-  document.querySelectorAll('.toggle-pill[data-exp]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('active');
-      const exp = btn.dataset.exp;
-      if (btn.classList.contains('active')) state.exposure.add(exp); else state.exposure.delete(exp);
-    });
-  });
-}
 function initAntihistamine(){
   const antiToggle = document.getElementById('antiToggle');
-  const antiName = document.getElementById('antiName');
   antiToggle.addEventListener('click', () => {
     antiToggle.classList.toggle('active');
     state.antihistamineTaken = antiToggle.classList.contains('active');
-    antiName.classList.toggle('visible', state.antihistamineTaken);
   });
 }
-function initRatingRow(containerId, onSelect){
-  const container = document.getElementById(containerId);
-  const btns = container.querySelectorAll('.rating-pill');
-  btns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      btns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      onSelect(parseInt(btn.dataset.val, 10));
+function buildExposureRatings(){
+  const container = document.getElementById('exposureRatings');
+  container.innerHTML = '';
+  EXPOSURE_FACTORS.forEach(factor => {
+    const item = document.createElement('div');
+    item.className = 'exposure-item';
+    const ratingButtons = [0, 1, 2, 3, 4, 5].map(v => `<button type="button" class="rating-pill" data-val="${v}">${v}</button>`).join('');
+    item.innerHTML = `
+      <span class="exposure-item-label">${factor.label}</span>
+      <div class="rating-row" data-factor="${factor.key}">${ratingButtons}</div>
+      ${factor.hasMaterial ? `<select class="text-input reveal-field" id="laserMaterial" style="max-width:220px;">
+        <option value="">Material…</option>
+        ${LASER_MATERIALS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}
+      </select>` : ''}
+    `;
+    container.appendChild(item);
+    const btns = item.querySelectorAll('.rating-pill');
+    btns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        btns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const val = parseInt(btn.dataset.val, 10);
+        state.exposureRatings[factor.key] = val;
+        if (factor.hasMaterial) {
+          document.getElementById('laserMaterial').classList.toggle('visible', val > 0);
+        }
+      });
     });
   });
 }
-function resetRatingRow(containerId){
-  document.getElementById(containerId).querySelectorAll('.rating-pill').forEach(b => b.classList.remove('active'));
-}
-
-function initLaserExposure(){
-  const laserToggle = document.getElementById('laserToggle');
+function resetExposureRatings(){
+  state.exposureRatings = {};
+  document.querySelectorAll('#exposureRatings .rating-pill').forEach(b => b.classList.remove('active'));
   const laserMaterial = document.getElementById('laserMaterial');
-  laserToggle.addEventListener('click', () => {
-    laserToggle.classList.toggle('active');
-    state.laserCutExposure = laserToggle.classList.contains('active');
-    laserMaterial.classList.toggle('visible', state.laserCutExposure);
-  });
+  if (laserMaterial) { laserMaterial.classList.remove('visible'); laserMaterial.value = ''; }
 }
 
 /* ================= New-location fields ================= */
@@ -548,25 +560,10 @@ function resetForm(){
     p.querySelector('input').checked = false;
   });
 
-  state.exposure.clear();
-  document.querySelectorAll('.toggle-pill[data-exp]').forEach(b => b.classList.remove('active'));
-
-  state.laserCutExposure = false;
-  document.getElementById('laserToggle').classList.remove('active');
-  const laserMaterial = document.getElementById('laserMaterial');
-  laserMaterial.classList.remove('visible');
-  laserMaterial.value = '';
-
-  state.printingExposure = null;
-  state.timeIndoors = null;
-  resetRatingRow('printingRating');
-  resetRatingRow('indoorsRating');
+  resetExposureRatings();
 
   state.antihistamineTaken = false;
   document.getElementById('antiToggle').classList.remove('active');
-  const antiName = document.getElementById('antiName');
-  antiName.classList.remove('visible');
-  antiName.value = '';
 
   document.getElementById('sleepInput').value = '';
   document.getElementById('notesInput').value = '';
@@ -604,18 +601,18 @@ async function handleSave(){
       location_name: locationName,
       severity_0_5: String(state.selectedSeverity),
       symptoms: Array.from(state.activeSymptoms).join(';'),
-      dog_contact: String(state.exposure.has('dog')),
-      cat_contact: String(state.exposure.has('cat')),
-      dust_exposure: String(state.exposure.has('dust')),
-      laser_cut_exposure: String(state.laserCutExposure),
-      laser_cut_material: state.laserCutExposure ? document.getElementById('laserMaterial').value : '',
-      printing_exposure_1_5: state.printingExposure !== null ? String(state.printingExposure) : '',
-      time_indoors_1_5: state.timeIndoors !== null ? String(state.timeIndoors) : '',
       antihistamine_taken: String(state.antihistamineTaken),
-      antihistamine_name: state.antihistamineTaken ? document.getElementById('antiName').value.trim() : '',
+      antihistamine_name: state.antihistamineTaken ? ANTIHISTAMINE_NAME : '',
       sleep_hours: document.getElementById('sleepInput').value || '',
       notes: document.getElementById('notesInput').value.trim(),
     };
+    EXPOSURE_FACTORS.forEach(factor => {
+      const val = state.exposureRatings[factor.key];
+      record[factor.field] = val !== undefined ? String(val) : '';
+      if (factor.hasMaterial) {
+        record.laser_cut_material = (val !== undefined && val > 0) ? document.getElementById('laserMaterial').value : '';
+      }
+    });
     setSaveStatus('Saving…', false);
     await updateCSV('symptoms.csv', SYMPTOM_HEADERS, (records) => { records.push(record); }, `Log symptom entry: ${record.date}`);
     state.symptoms.push(record);
@@ -809,11 +806,8 @@ async function loadAll(){
 function init(){
   initGauge();
   initSymptomPills();
-  initExposureToggles();
+  buildExposureRatings();
   initAntihistamine();
-  initLaserExposure();
-  initRatingRow('printingRating', (v) => { state.printingExposure = v; });
-  initRatingRow('indoorsRating', (v) => { state.timeIndoors = v; });
   initLocationEntry();
   initModal();
   document.getElementById('saveBtn').addEventListener('click', handleSave);

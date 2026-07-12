@@ -218,6 +218,9 @@ select.location-select:focus-visible, button:focus-visible, input:focus-visible,
 }
 .toggle-pill.active{ background:var(--sky-soft); border-color:var(--sky); color:#233842; }
 
+.exposure-item{ margin-bottom:14px; }
+.exposure-item:last-child{ margin-bottom:0; }
+.exposure-item-label{ font-size:13px; color:var(--ink); margin-bottom:8px; display:block; }
 .rating-row{ display:flex; gap:8px; }
 .rating-pill{
   width:38px; height:38px;
