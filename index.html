@@ -80,12 +80,18 @@
 
   <p class="section-label">Log entry</p>
   <div class="card form-card">
-    <div class="field-group">
-      <label class="field-label" for="entryLocationSelect">Location</label>
-      <select class="text-input" id="entryLocationSelect" style="max-width:280px;"></select>
-      <div class="new-location-fields" id="newLocationFields">
-        <input type="text" class="text-input" id="newLocName" placeholder="Name (e.g. Work)">
-        <input type="text" class="text-input" id="newLocPlace" placeholder="City, State or lat,lon">
+    <div class="form-row">
+      <div class="field-group">
+        <label class="field-label" for="entryLocationSelect">Location</label>
+        <select class="text-input" id="entryLocationSelect"></select>
+        <div class="new-location-fields" id="newLocationFields">
+          <input type="text" class="text-input" id="newLocName" placeholder="Name (e.g. Work)">
+          <input type="text" class="text-input" id="newLocPlace" placeholder="City, State or lat,lon">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="entryDateInput">Date</label>
+        <input type="date" class="text-input" id="entryDateInput" style="max-width:200px;">
       </div>
     </div>
 
@@ -112,6 +118,29 @@
         <option value="leather">Leather</option>
         <option value="other">Other (note it below)</option>
       </select>
+    </div>
+
+    <div class="form-row">
+      <div class="field-group">
+        <label class="field-label">3D-printing exposure (1–5)</label>
+        <div class="rating-row" id="printingRating">
+          <button type="button" class="rating-pill" data-val="1">1</button>
+          <button type="button" class="rating-pill" data-val="2">2</button>
+          <button type="button" class="rating-pill" data-val="3">3</button>
+          <button type="button" class="rating-pill" data-val="4">4</button>
+          <button type="button" class="rating-pill" data-val="5">5</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Time spent indoors (1–5)</label>
+        <div class="rating-row" id="indoorsRating">
+          <button type="button" class="rating-pill" data-val="1">1</button>
+          <button type="button" class="rating-pill" data-val="2">2</button>
+          <button type="button" class="rating-pill" data-val="3">3</button>
+          <button type="button" class="rating-pill" data-val="4">4</button>
+          <button type="button" class="rating-pill" data-val="5">5</button>
+        </div>
+      </div>
     </div>
 
     <div class="form-row">
@@ -159,6 +188,12 @@
   <div class="card history-card">
     <div class="incomplete-list" id="incompleteList"></div>
     <div class="empty-state" id="incompleteEmpty" style="display:none;">Nothing here yet.</div>
+  </div>
+
+  <p class="section-label">Manage recent entries</p>
+  <div class="card history-card">
+    <div class="manage-list" id="manageList"></div>
+    <div class="empty-state" id="manageEmpty" style="display:none;">No entries yet.</div>
   </div>
 
   <footer>

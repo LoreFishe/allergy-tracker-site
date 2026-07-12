@@ -9,7 +9,7 @@ const CONFIG = {
 const TOKEN_KEY = 'at_pat';
 
 const ENV_HEADERS = ['date','location_name','temp_c','humidity_pct','wind_kph','pm2_5','pm10','aqi_european','pollen_tree','pollen_grass','pollen_weed','source_weather','source_pollen','fetched_at_utc'];
-const SYMPTOM_HEADERS = ['date','time','location_name','severity_0_5','symptoms','dog_contact','cat_contact','dust_exposure','laser_cut_exposure','laser_cut_material','antihistamine_taken','antihistamine_name','sleep_hours','notes'];
+const SYMPTOM_HEADERS = ['date','time','location_name','severity_0_5','symptoms','dog_contact','cat_contact','dust_exposure','laser_cut_exposure','laser_cut_material','printing_exposure_1_5','time_indoors_1_5','antihistamine_taken','antihistamine_name','sleep_hours','notes'];
 const LOCATION_HEADERS = ['name','lat','lon','active'];
 
 const SYMPTOM_VOCAB = [
@@ -32,6 +32,8 @@ const state = {
   exposure: new Set(),
   antihistamineTaken: false,
   laserCutExposure: false,
+  printingExposure: null,
+  timeIndoors: null,
 };
 
 /* ================= Token ================= */
@@ -433,6 +435,21 @@ function initAntihistamine(){
     antiName.classList.toggle('visible', state.antihistamineTaken);
   });
 }
+function initRatingRow(containerId, onSelect){
+  const container = document.getElementById(containerId);
+  const btns = container.querySelectorAll('.rating-pill');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      onSelect(parseInt(btn.dataset.val, 10));
+    });
+  });
+}
+function resetRatingRow(containerId){
+  document.getElementById(containerId).querySelectorAll('.rating-pill').forEach(b => b.classList.remove('active'));
+}
+
 function initLaserExposure(){
   const laserToggle = document.getElementById('laserToggle');
   const laserMaterial = document.getElementById('laserMaterial');
@@ -477,13 +494,94 @@ function setSaveStatus(msg, isError){
   el.textContent = msg;
   el.classList.toggle('error', !!isError);
   el.classList.add('visible');
-  if (!isError) setTimeout(() => el.classList.remove('visible'), 3000);
+  if (!isError) setTimeout(() => el.classList.remove('visible'), 4000);
+}
+
+/* ================= Delete entries ================= */
+async function deleteSymptomLog(record){
+  if (!confirm(`Delete this entry?\n${record.date} ${record.time} · ${record.location_name} · severity ${record.severity_0_5}\n\nThis can't be undone.`)) return;
+  try {
+    const updated = await updateCSV('symptoms.csv', SYMPTOM_HEADERS, (records) => {
+      const idx = records.findIndex(r => SYMPTOM_HEADERS.every(h => (r[h] || '') === (record[h] || '')));
+      if (idx !== -1) records.splice(idx, 1);
+    }, `Delete symptom entry: ${record.date} ${record.time}`);
+    state.symptoms = updated;
+    renderHistory();
+  } catch (e) {
+    console.error(e);
+    alert('Could not delete that entry — check your token and connection.');
+  }
+}
+
+function renderManageList(){
+  const list = document.getElementById('manageList');
+  const empty = document.getElementById('manageEmpty');
+  const recent = state.symptoms.slice().sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time)).slice(0, 30);
+  if (!recent.length) { list.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  list.innerHTML = '';
+  recent.forEach(log => {
+    const row = document.createElement('div');
+    row.className = 'manage-row';
+    row.innerHTML = `
+      <span class="mr-info">
+        <span class="mr-date">${log.date} ${log.time}</span>
+        <span>${log.location_name}</span>
+        <span class="mr-sev">Severity ${log.severity_0_5}</span>
+      </span>
+      <button type="button" class="delete-btn" aria-label="Delete entry" title="Delete entry">×</button>
+    `;
+    row.querySelector('.delete-btn').addEventListener('click', () => deleteSymptomLog(log));
+    list.appendChild(row);
+  });
+}
+
+function resetForm(){
+  state.selectedSeverity = null;
+  document.querySelectorAll('.tick-btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  document.getElementById('severityNum').textContent = '–';
+  document.getElementById('severityWord').textContent = 'Not logged';
+
+  state.activeSymptoms.clear();
+  document.querySelectorAll('.symptom-pill').forEach(p => {
+    p.classList.remove('active');
+    p.querySelector('input').checked = false;
+  });
+
+  state.exposure.clear();
+  document.querySelectorAll('.toggle-pill[data-exp]').forEach(b => b.classList.remove('active'));
+
+  state.laserCutExposure = false;
+  document.getElementById('laserToggle').classList.remove('active');
+  const laserMaterial = document.getElementById('laserMaterial');
+  laserMaterial.classList.remove('visible');
+  laserMaterial.value = '';
+
+  state.printingExposure = null;
+  state.timeIndoors = null;
+  resetRatingRow('printingRating');
+  resetRatingRow('indoorsRating');
+
+  state.antihistamineTaken = false;
+  document.getElementById('antiToggle').classList.remove('active');
+  const antiName = document.getElementById('antiName');
+  antiName.classList.remove('visible');
+  antiName.value = '';
+
+  document.getElementById('sleepInput').value = '';
+  document.getElementById('notesInput').value = '';
+  document.getElementById('entryDateInput').value = todayISO();
 }
 
 async function handleSave(){
   const saveBtn = document.getElementById('saveBtn');
   if (state.selectedSeverity === null) {
     setSaveStatus('Pick a severity on the dial first', true);
+    return;
+  }
+  const entryDate = document.getElementById('entryDateInput').value;
+  if (!entryDate) {
+    setSaveStatus('Pick a date for this entry', true);
     return;
   }
   const entrySel = document.getElementById('entryLocationSelect');
@@ -501,7 +599,7 @@ async function handleSave(){
       document.getElementById('entryLocationSelect').value = name;
     }
     const record = {
-      date: todayISO(),
+      date: entryDate,
       time: nowTimeHM(),
       location_name: locationName,
       severity_0_5: String(state.selectedSeverity),
@@ -511,6 +609,8 @@ async function handleSave(){
       dust_exposure: String(state.exposure.has('dust')),
       laser_cut_exposure: String(state.laserCutExposure),
       laser_cut_material: state.laserCutExposure ? document.getElementById('laserMaterial').value : '',
+      printing_exposure_1_5: state.printingExposure !== null ? String(state.printingExposure) : '',
+      time_indoors_1_5: state.timeIndoors !== null ? String(state.timeIndoors) : '',
       antihistamine_taken: String(state.antihistamineTaken),
       antihistamine_name: state.antihistamineTaken ? document.getElementById('antiName').value.trim() : '',
       sleep_hours: document.getElementById('sleepInput').value || '',
@@ -519,7 +619,8 @@ async function handleSave(){
     setSaveStatus('Saving…', false);
     await updateCSV('symptoms.csv', SYMPTOM_HEADERS, (records) => { records.push(record); }, `Log symptom entry: ${record.date}`);
     state.symptoms.push(record);
-    setSaveStatus('✓ Entry saved', false);
+    resetForm();
+    setSaveStatus('✓ Entry saved — form cleared for the next one', false);
     renderHistory();
   } catch (e) {
     console.error(e);
@@ -653,6 +754,7 @@ function renderHistory(){
   const { complete, incomplete } = classifyLogs();
   renderChart(complete);
   renderIncomplete(incomplete);
+  renderManageList();
 }
 
 /* ================= Token modal ================= */
@@ -710,9 +812,12 @@ function init(){
   initExposureToggles();
   initAntihistamine();
   initLaserExposure();
+  initRatingRow('printingRating', (v) => { state.printingExposure = v; });
+  initRatingRow('indoorsRating', (v) => { state.timeIndoors = v; });
   initLocationEntry();
   initModal();
   document.getElementById('saveBtn').addEventListener('click', handleSave);
+  document.getElementById('entryDateInput').value = todayISO();
   document.getElementById('todayLabel').textContent = 'Today · ' + todayISO();
 
   if (getToken()) {
