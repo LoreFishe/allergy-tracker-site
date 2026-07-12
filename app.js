@@ -7,6 +7,13 @@ const CONFIG = {
   branch: 'main',
 };
 const TOKEN_KEY = 'at_pat';
+const THEME_KEY = 'at_theme';
+
+// Applied immediately (not on DOMContentLoaded) to avoid a flash of the default theme.
+(function applyStoredTheme(){
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved && saved !== 'meadow') document.documentElement.setAttribute('data-theme', saved);
+})();
 
 const ENV_HEADERS = ['date','location_name','temp_c','humidity_pct','wind_kph','pm2_5','pm10','aqi_european','pollen_tree','pollen_grass','pollen_weed','source_weather','source_pollen','fetched_at_utc'];
 const SYMPTOM_HEADERS = ['date','time','location_name','severity_0_5','symptoms','dog_exposure_0_5','cat_exposure_0_5','dust_exposure_0_5','laser_cut_exposure_0_5','laser_cut_material','printing_exposure_0_5','time_indoors_0_5','antihistamine_taken','antihistamine_name','sleep_hours','notes'];
@@ -446,7 +453,7 @@ function buildExposureRatings(){
     const item = document.createElement('div');
     item.className = 'exposure-item';
     const numberButtons = [0, 1, 2, 3, 4, 5].map(v => `<button type="button" class="rating-pill" data-val="${v}">${v}</button>`).join('');
-    const unsureButton = `<button type="button" class="rating-pill unsure" data-val="unsure" title="Happened, but unsure how much">?</button>`;
+    const unsureButton = `<button type="button" class="rating-pill unsure" data-val="unsure" title="Happened, but unsure how much">✓</button>`;
     item.innerHTML = `
       <span class="exposure-item-label">${factor.label}</span>
       <div class="rating-row" data-factor="${factor.key}">${numberButtons}${unsureButton}</div>
@@ -676,10 +683,13 @@ function classifyLogs(){
 }
 
 /* ================= History rendering ================= */
+function themeVar(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
 function sevColor(sev){
-  if (sev <= 1) return '#5F7A67';
-  if (sev <= 3) return '#B8862E';
-  return '#A14B3B';
+  if (sev <= 1) return themeVar('--sage');
+  if (sev <= 3) return themeVar('--gold');
+  return themeVar('--rust');
 }
 function pollenAvg(row){
   const vals = [row.pollen_tree, row.pollen_grass, row.pollen_weed].filter(v => v !== '' && v !== undefined).map(Number);
@@ -710,6 +720,7 @@ function renderChart(completeLogs){
   });
   const maxPollen = Math.max(1, ...points.map(p => p.pollen || 0));
 
+  const trendColor = themeVar('--ink-faint');
   let html = '';
   const pollenPoints = points.filter(p => p.pollen !== null);
   if (pollenPoints.length > 1) {
@@ -720,12 +731,12 @@ function renderChart(completeLogs){
       const y = padT + (1 - p.pollen / maxPollen) * (maxBarH * 0.5);
       linePoints += `${x.toFixed(1)},${y.toFixed(1)} `;
     });
-    html += `<polyline points="${linePoints.trim()}" fill="none" stroke="#8B9086" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8"/>`;
+    html += `<polyline points="${linePoints.trim()}" fill="none" stroke="${trendColor}" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8"/>`;
     points.forEach((p, i) => {
       if (p.pollen === null) return;
       const x = padL + i * (chartW / days) + (chartW / days) / 2;
       const y = padT + (1 - p.pollen / maxPollen) * (maxBarH * 0.5);
-      html += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.4" fill="#8B9086"/>`;
+      html += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.4" fill="${trendColor}"/>`;
     });
   }
 
@@ -737,7 +748,7 @@ function renderChart(completeLogs){
     if (i % 3 === 0) {
       const d = new Date(p.date + 'T00:00:00Z');
       const lbl = (d.getUTCMonth() + 1) + '/' + d.getUTCDate();
-      html += `<text x="${(x + barW / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#8B9086">${lbl}</text>`;
+      html += `<text x="${(x + barW / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="${trendColor}">${lbl}</text>`;
     }
   });
   svg.innerHTML = html;
@@ -779,6 +790,28 @@ function renderHistory(){
 }
 
 /* ================= Token modal ================= */
+function applyTheme(theme){
+  if (theme && theme !== 'meadow') {
+    document.documentElement.setAttribute('data-theme', theme);
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+  }
+  document.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === (theme || 'meadow'));
+  });
+}
+function initThemePicker(){
+  applyTheme(localStorage.getItem(THEME_KEY) || 'meadow');
+  document.querySelectorAll('.theme-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.theme;
+      localStorage.setItem(THEME_KEY, theme);
+      applyTheme(theme);
+      renderHistory();
+    });
+  });
+}
+
 function initModal(){
   const backdrop = document.getElementById('modalBackdrop');
   const input = document.getElementById('tokenInput');
@@ -835,6 +868,7 @@ function init(){
   initAntihistamine();
   initLocationEntry();
   initModal();
+  initThemePicker();
   document.getElementById('saveBtn').addEventListener('click', handleSave);
   document.getElementById('entryDateInput').value = todayISO();
   document.getElementById('todayLabel').textContent = 'Today · ' + todayISO();

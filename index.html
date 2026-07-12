@@ -47,23 +47,29 @@
 
   <p class="section-label" id="todayLabel">Today</p>
 
-  <div class="today-grid">
-    <div class="card tracker-card" id="trackerCard">
-      <button type="button" class="tracker-collapsed" id="trackerCollapsedBtn">
-        <span class="tracker-plus" id="trackerPlus">+</span>
-        <span class="tracker-plus-label" id="trackerPlusLabel">Track</span>
-      </button>
+  <div class="card env-card">
+    <h2 id="envTitle">Conditions today</h2>
+    <div id="envBody">
+      <div class="env-empty">No environmental data yet — connect your data repo to load it.</div>
+    </div>
+  </div>
 
-      <div class="tracker-expanded" id="trackerExpanded">
+  <div class="tracker-card" id="trackerCard">
+    <button type="button" class="tracker-collapsed" id="trackerCollapsedBtn">
+      <span class="tracker-plus" id="trackerPlus">+</span>
+      <span class="tracker-plus-label" id="trackerPlusLabel">Track</span>
+    </button>
+
+    <div class="tracker-expanded card" id="trackerExpanded">
         <div class="tracker-expanded-header">
           <h2 style="font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin:0;">How are you feeling?</h2>
           <button type="button" class="icon-btn" id="trackerCancelBtn" aria-label="Collapse without saving" title="Collapse without saving">×</button>
         </div>
         <div class="gauge-wrap">
           <svg viewBox="0 0 220 130">
-            <path d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke="#DBD9CB" stroke-width="3"/>
-            <line id="needle" x1="110" y1="110" x2="110" y2="30" stroke="#232A24" stroke-width="2.5" stroke-linecap="round"/>
-            <circle cx="110" cy="110" r="6" fill="#232A24"/>
+            <path class="gauge-track" d="M 20 110 A 90 90 0 0 1 200 110" fill="none" stroke-width="3"/>
+            <line id="needle" class="gauge-needle" x1="110" y1="110" x2="110" y2="30" stroke-width="2.5" stroke-linecap="round"/>
+            <circle class="gauge-needle-hub" cx="110" cy="110" r="6"/>
           </svg>
           <button class="tick-btn" data-val="0" aria-pressed="false" aria-label="Severity 0, clear"></button>
           <button class="tick-btn" data-val="1" aria-pressed="false" aria-label="Severity 1, mild"></button>
@@ -128,22 +134,15 @@
         </div>
       </div>
     </div>
-
-    <div class="card env-card">
-      <h2 id="envTitle">Conditions today</h2>
-      <div id="envBody">
-        <div class="env-empty">No environmental data yet — connect your data repo to load it.</div>
-      </div>
-    </div>
   </div>
 
   <p class="section-label">History — complete records</p>
   <div class="card history-card">
     <div class="legend">
-      <span><span class="sw" style="background:#5F7A67"></span>Clear / mild</span>
-      <span><span class="sw" style="background:#B8862E"></span>Noticeable / rough</span>
-      <span><span class="sw" style="background:#A14B3B"></span>Bad / severe</span>
-      <span><span class="sw" style="background:#8B9086; border-radius:50%; width:6px; height:6px;"></span>Pollen trend</span>
+      <span><span class="sw sw-sage"></span>Clear / mild</span>
+      <span><span class="sw sw-gold"></span>Noticeable / rough</span>
+      <span><span class="sw sw-rust"></span>Bad / severe</span>
+      <span><span class="sw sw-trend"></span>Pollen trend</span>
     </div>
     <div class="chart-wrap" id="chartWrap">
       <svg id="historyChart" viewBox="0 0 640 180" style="width:100%; height:auto; overflow:visible;"></svg>
@@ -175,6 +174,15 @@
     <p>Paste a fine-grained GitHub token scoped to only your <code>allergy-tracker-data</code> repo (Contents: Read and write). See the README for how to generate one. It's stored in this browser's local storage — anyone with access to this unlocked browser could use it to write to that repo, but nothing else.</p>
     <input type="password" class="text-input" id="tokenInput" placeholder="github_pat_••••••••••••••••••••">
     <div class="modal-status" id="modalStatus"></div>
+
+    <label class="field-label">Color scheme</label>
+    <div class="theme-swatch-row" id="themeSwatchRow">
+      <button type="button" class="theme-swatch" data-theme="meadow" style="background:#E7E6DC;" title="Meadow"><span style="background:#B8862E;"></span></button>
+      <button type="button" class="theme-swatch" data-theme="harbor" style="background:#E3E9EC;" title="Harbor"><span style="background:#3E7CA6;"></span></button>
+      <button type="button" class="theme-swatch" data-theme="clay" style="background:#EFE3D9;" title="Clay"><span style="background:#C2672F;"></span></button>
+      <button type="button" class="theme-swatch" data-theme="midnight" style="background:#171A18;" title="Midnight"><span style="background:#D4A24E;"></span></button>
+    </div>
+
     <div class="modal-actions">
       <button class="btn-ghost" id="modalClose">Close</button>
       <button class="btn-primary" id="modalSave">Save token</button>
